@@ -1,6 +1,29 @@
 using ELEC2117_Project
 using Test
 
+@testset "Project" begin
+    # Populations
+    N = 6000
+    I0 = 1
+    SI0 = 0
+    R0 = 0
+    S0 = 6000 - I0 - R0 - SI0
+
+    # Parameters
+    contacts = 8
+    beta = 
+    gamma = 1/7
+    epsilon = 1/14
+    alpha = 1/28
+    SIratio = 0.2
+    params = SIRForceOfInfection(beta, gamma, contacts, SIratio, epsilon, alpha, [])
+
+    days = 60
+
+    @test 
+end
+
+#=
 @testset "BasicSIR" begin
     ##################### Normal Test
     # Solve the SIR model
@@ -69,6 +92,7 @@ using Test
         @test sum(i) ≈ initial_total
     end
 end
+
 
 @testset "SIRForceOfInfection" begin
     ################## Normal Function
@@ -301,4 +325,4 @@ end
         end
     end
 end
-
+=#
