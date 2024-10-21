@@ -158,26 +158,25 @@ function plot_SIR(S0, I0, SI0, R0, days, params)
     plot(solution, xlabel="Time", ylabel="Population", title="Solution", labels=["Susceptible" "Infected" "Seriously Infected" "Recovered"]) # Plot the model
 end
 
-function get_vals(S0, I0, SI0, R0, days, params)
-    solution, lambdas = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
-
-    plot(solution, xlabel="Time", ylabel="Population", title="Solution", labels=["Susceptible" "Infected" "Recovered"]) # Plot the model
-
-    println("Number of Infected Ever: ", solution.u[length(solution.t)][2] + solution.u[length(solution.t)][3])
-
-    peak_day = 0
-    peak_val = 0
-    for j in 1:length(solution.t)
-        if peak_val < solution.u[j][2]
-            peak_val = solution.u[j][2]
-            peak_day = solution.t[j]
-        end
-    end
-
-    println("Peak Day of Infections: ", peak_day)
-end
-
-function compare_vals(S0, I0, SI0, R0, days, params)
+"""
+# plot_SIR is a driver function to solve and plot the SIR model
+# Inputs:
+# - S0 = Initial Susceptible Population
+# - I0 = Initial Infected Population
+# - SI0 = Initial Seriously Infected Population
+# - R0 = Initial Recovered Population
+# - days = No. of days modelled 
+# - params = array of other necessary parameters
+#   - beta = transmission chance of any interaction
+#   - gamma = recovery rate
+#   - contacts = number of daily contacts a person has
+#   - SIratio = proportion of people being seriously infected
+#   - epsilon = recovery rate of seriously infected
+#   - alpha = number of recovered people losing immunity
+#   - lambdas = recorded array of lambdas with timestamps
+# - infected = either 1 or 0 to indicate whether to plot infected or seriously infected data
+"""
+function plot_infected(S0, I0, SI0, R0, days, params, infected)
     solution, lambdas = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
 
     actual_infected = [11,7,20,3,29,14,11,12,16,10,58]
@@ -195,10 +194,13 @@ function compare_vals(S0, I0, SI0, R0, days, params)
 
     R0 = params.contacts*params.beta/params.gamma
     pc = 1 - 1/R0 # Herd immunity threshold
-    println("R0: ", R0)
+    #println("R0: ", R0)
 
-    plot(solution.t, seriously_infected, xlabel="Time", ylabel="Population", title="Solution", labels="Infected") # Plot the model
-    plot!(xsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Solution", labels="Actual Infected") # Plot the model
-    #plot!(xsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Solution", labels="Actual Seriously Infected") # Plot the model
-
+    if infected == 0
+        plot(solution.t, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected") # Plot the model
+        plot!(xi, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected") # Plot the model
+    else 
+        plot(solution.t, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected") # Plot the model
+        plot!(xsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected") # Plot the model
+    end
 end
