@@ -69,7 +69,7 @@ end
 ###############################################################
 function SIR!(dP, P, params::SIRForceOfInfectionIntervention, t)
     N = P[1] + P[2] + P[3] + P[4] # Total Population
-    lambda = P[2]/N*params.beta*params.contacts # Force of Infection
+    lambda = P[2]/N*params.beta*params.contacts*(1-params.epsilon*params.p) # Force of Infection
     dP[1] = params.alpha*P[4] - lambda*P[1] # Change in Susceptible Population
     dP[2] = lambda*P[1] - params.gamma*P[2] # Change in Infected Population
     dP[3] = params.gamma*params.SIratio*P[2] - params.delta*P[3] # Change in Seriously Infected Population
