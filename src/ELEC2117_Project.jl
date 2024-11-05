@@ -7,6 +7,6 @@ module ELEC2117_Project
     # SIR Functions
     include("mycode.jl")
     export solve_SIR, plot_SIR, plot_infected
-    export SIRFoI, SIRFoIIntervention
+    export SIRFoI
 
 end
