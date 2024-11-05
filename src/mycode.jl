@@ -50,8 +50,6 @@ end
 #   - delta = recovery rate of seriously infected
 #   - alpha = number of recovered people losing immunity
 #   - lambdas = recorded array of lambdas with timestamps
-#   - epsilon = intervention efficacy
-#   - p = coverage rate
 """
 function solve_SIR(S0, I0, SI0, R0, days, params)
     P0 = [S0, I0, SI0, R0] # Initial populations vector
@@ -79,8 +77,6 @@ end
 #   - delta = recovery rate of seriously infected
 #   - alpha = number of recovered people losing immunity
 #   - lambdas = recorded array of lambdas with timestamps
-#   - epsilon = intervention efficacy
-#   - p = coverage rate
 """
 function plot_SIR(S0, I0, SI0, R0, days, params)
     solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
@@ -105,9 +101,6 @@ end
 #   - SIratio = proportion of people being seriously infected
 #   - delta = recovery rate of seriously infected
 #   - alpha = number of recovered people losing immunity
-#   - lambdas = recorded array of lambdas with timestamps
-#   - epsilon = intervention efficacy
-#   - p = coverage rate
 """
 function plot_infected(S0, I0, SI0, R0, days, params, infected)
     solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
@@ -117,6 +110,16 @@ function plot_infected(S0, I0, SI0, R0, days, params, infected)
     xi = [15,16,17,18,19,20,21,22,23,24,25]
     actual_seriously_infected = [0,0,1,2,5]
     xsi = [21,22,23,24,25]
+
+    infected = []
+    seriously_infected = []
+    time = []
+
+    for i = 1:length(solution.t)
+        push!(infected,solution.u[i][2])
+        push!(seriously_infected,solution.u[i][3])
+        push!(time, solution.t[i])
+    end
 
     # Print associated R0 value
     R0 = params.contacts*params.beta/params.gamma
