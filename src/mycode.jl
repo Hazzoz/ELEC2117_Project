@@ -50,8 +50,6 @@ end
 #   - delta = recovery rate of seriously infected
 #   - alpha = number of recovered people losing immunity
 #   - lambdas = recorded array of lambdas with timestamps
-#   - epsilon = intervention efficacy
-#   - p = coverage rate
 """
 function solve_SIR(S0, I0, SI0, R0, days, params)
     P0 = [S0, I0, SI0, R0] # Initial populations vector
