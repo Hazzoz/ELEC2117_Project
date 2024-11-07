@@ -153,15 +153,8 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
     infected = Float64[]
     seriously_infected = Float64[]
     time = Float64[]
-
-    params.SIratio = ratio_range[1]
-    solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
-
+    previous_infected = Float64[]
     previous_seriously_infected = Float64[]
-
-    for i = 1:length(solution.t)
-        push!(previous_seriously_infected,solution.u[i][3])
-    end
 
     for j in ratios
         params.SIratio = j
@@ -177,12 +170,22 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
             push!(time, solution.t[i])
         end
 
+        if isempty(previous_infected)
+            previous_infected = deepcopy(infected)
+        end
+        if isempty(previous_seriously_infected)
+            previous_seriously_infected = deepcopy(seriously_infected)
+        end
+
         # Determines whether to plot infected or seriously infected graph
-        if infect != 0
+        if infect == 0
+            plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels=nothing, fillrange=previous_infected, colour=:blue) # Plot the model
+        else
             plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Plot the model
         end
 
         previous_seriously_infected = deepcopy(seriously_infected)
+        previous_infected = deepcopy(infected)
     end
 
     # Print associated R0 value
@@ -190,8 +193,8 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
     println("R0: ", round(R0, digits=3))
 
     if infect == 0
-        plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected") # Plot the model
-        plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected") # Plot the model
+        plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected", colour=:blue) # Plot the model
+        plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected", colour=:red) # Plot the model
     else
         plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected", colour=:blue) # Plot the model
         plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected", colour=:red) # Plot the model
@@ -281,103 +284,89 @@ function error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
     plot!(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, colour=:blue)
 end
 
-function plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range, params2)
+function plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range)
     max_infected_peak = 0
     min_infected_peak = 0
     max_seriously_infected_peak = 0
     min_seriously_infected_peak = 0
 
-    betas = range(beta_range[1], beta_range[2], length=100)
-    plot([0], [0], xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing)
+    plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, colour=:black)
 
-    params.beta = beta_range[1]
-    solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
-
-    previous_infected = Float64[]
-    previous_seriously_infected = Float64[]
-
-    for i = 1:length(solution.t)
-        push!(previous_infected,solution.u[i][2])
-        push!(previous_seriously_infected,solution.u[i][3])
-    end
-
-    params2.beta = beta_range[1]
-    solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
-
-    for i = 1:length(solution.t)
-        push!(previous_infected,solution.u[i][2])
-        push!(previous_seriously_infected,solution.u[i][3])
-    end
-
-    min_infected_peak = maximum(previous_infected)
-    min_seriously_infected_peak = maximum(previous_seriously_infected)
-
-    # Loops through range of betas
-    for j in betas
-        params.beta = j # Changes value to new beta
-        solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
-
-        infected = Float64[]
-        seriously_infected = Float64[]
-        time = Float64[]
-
-        for i = 1:length(solution.t)
-            push!(infected,solution.u[i][2])
-            push!(seriously_infected,solution.u[i][3])
-            push!(time, solution.t[i])
-        end
-
-        params2.beta = beta_range[2]
-        solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
-
-        for i = 1:length(solution.t)
-            push!(infected,solution.u[i][2])
-            push!(seriously_infected,solution.u[i][3])
-            push!(time, solution.t[i]+days[1])
-        end
-
-        while length(previous_infected) < length(infected)
-            push!(previous_infected,previous_infected[end])
-        end
-
-        while length(previous_seriously_infected) < length(seriously_infected)
-            push!(previous_seriously_infected,previous_seriously_infected[end])
-        end
-
-        plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, color=:blue, fillrange=previous_infected)
-        plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, color=:red, fillrange=previous_seriously_infected)
-
-        previous_infected = deepcopy(infected)
-        previous_seriously_infected = deepcopy(seriously_infected)
-    end
-
-    params.beta = beta_range[2]
-    solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
+    ratios = range(ratio_range[1], ratio_range[2], 50)
 
     infected = Float64[]
     seriously_infected = Float64[]
-    time = Float64[]
+    time = Float64[] 
 
-    for i = 1:length(solution.t)
-        push!(infected,solution.u[i][2])
-        push!(seriously_infected,solution.u[i][3])
-        push!(time, solution.t[i])
+    for r in ratios
+        params.SIratio = r
+        params2.SIratio = r
+        previous_infected = Float64[]
+        previous_seriously_infected = Float64[]
+        betas = range(beta_range[1], beta_range[2], length=100)
+
+        # Loops through range of betas
+        for j in betas
+            params.beta = j # Changes value to new beta
+            solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
+
+            infected = Float64[]
+            seriously_infected = Float64[]
+            time = Float64[]
+
+            for i = 1:length(solution.t)
+                push!(infected,solution.u[i][2])
+                push!(seriously_infected,solution.u[i][3])
+                push!(time, solution.t[i])
+            end
+
+            params2.beta = j
+            solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
+
+            for i = 1:length(solution.t)
+                push!(infected,solution.u[i][2])
+                push!(seriously_infected,solution.u[i][3])
+                push!(time, solution.t[i]+days[1])
+            end
+
+            if isempty(previous_infected)
+                previous_infected = deepcopy(infected)
+            end
+            if isempty(previous_seriously_infected)
+                previous_seriously_infected = deepcopy(seriously_infected)
+            end
+
+            while length(previous_infected) < length(infected)
+                push!(previous_infected,previous_infected[end])
+            end
+
+            while length(previous_seriously_infected) < length(seriously_infected)
+                push!(previous_seriously_infected,previous_seriously_infected[end])
+            end
+
+            plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, color=:blue, fillrange=previous_infected)
+            plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, color=:red, fillrange=previous_seriously_infected)
+
+            if max_infected_peak < maximum(infected)
+                max_infected_peak = maximum(infected)
+            end
+            if max_seriously_infected_peak < maximum(seriously_infected)
+                max_seriously_infected_peak = maximum(seriously_infected)
+            end
+            if min_infected_peak > maximum(infected) || min_infected_peak == 0
+                min_infected_peak = maximum(infected)
+            end
+            if min_seriously_infected_peak > maximum(seriously_infected) || min_seriously_infected_peak == 0
+                min_seriously_infected_peak = maximum(seriously_infected)
+            end
+
+            previous_infected = deepcopy(infected)
+            previous_seriously_infected = deepcopy(seriously_infected)
+        end
     end
 
-    params2.beta = beta_range[2]
-    solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
-
-    for i = 1:length(solution.t)
-        push!(infected,solution.u[i][2])
-        push!(seriously_infected,solution.u[i][3])
-        push!(time, solution.t[i]+days[1])
-    end
-
-    max_infected_peak = maximum(infected)
-    max_seriously_infected_peak = maximum(seriously_infected)
-
-    println("Peak Infected: ", round(min_infected_peak,digits=0), "-", round(max_infected_peak,digits=0))
-    println("Peak Seriously Infected: ", round(min_seriously_infected_peak,digits=0), "-", round(max_seriously_infected_peak,digits=0))
+    println("Peak Infected: ", round(min_infected_peak,digits=0), " - ", round(max_infected_peak,digits=0))
+    println("Peak Seriously Infected: ", round(min_seriously_infected_peak,digits=0), " - ", round(max_seriously_infected_peak,digits=0))
 
     plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels="Infected", color=:blue)
     plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels="Seriously Infected", color=:red)
@@ -395,7 +384,7 @@ function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2
     min_seriously_infected_peak_intervention = 0
 
     betas = range(beta_range[1], beta_range[2], length=100)
-    plot([30,30], [0,250], xlabel="Time (Days)", ylabel="Population", title=" ", labels=nothing,colour=:black)
+    plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title=" ", labels=nothing,colour=:black)
 
     params.beta = beta_range[1]
     solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
@@ -549,62 +538,6 @@ function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2
         println("Peak Seriously Infected Intervention: ", round(min_seriously_infected_peak_intervention,digits=0), "-", round(max_seriously_infected_peak_intervention,digits=0))
         plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected Intervention Effects", labels="No Intervention", color=:red, alpha=0.5)
         plot!(time_intervention, seriously_infected_intervention, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected Intervention Effects", labels="Intervention", color=:blue, alpha=0.5)
-    end
-end
-
-"""
-# plot_infected is a function that plots either the infected or
-# seriously infected data against the true data to allow for visual
-# inspection of the models fit.
-# Inputs:
-# - S0 = Initial Susceptible Population
-# - I0 = Initial Infected Population
-# - SI0 = Initial Seriously Infected Population
-# - R0 = Initial Recovered Population
-# - days = No. of days modelled 
-# - params = array of other necessary parameters
-#   - beta = transmission chance of any interaction
-#   - gamma = recovery rate
-#   - contacts = number of daily contacts a person has
-#   - SIratio = proportion of people being seriously infected
-#   - delta = recovery rate of seriously infected
-#   - alpha = number of recovered people losing immunity
-# - infect = determines whether to plot infected or seriously infected data
-"""
-function plot_infected_intervention(S0, I0, SI0, R0, days, params, infect, params2)
-    solution = solve_SIR(S0, I0, SI0, R0, days[1], params) # Solve the SIR model
-
-    # Actual data up to day 55
-    actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352]
-    ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
-    actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4,22,0,15,48,38,57,9,18,20,0,41,15,35,36,27,38,24,40,34,57,18,29,63,66,119]
-    tsi = [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
-
-    infected = []
-    seriously_infected = []
-    time = []
-
-    for i = 1:length(solution.t)
-        push!(infected,solution.u[i][2])
-        push!(seriously_infected,solution.u[i][3])
-        push!(time, solution.t[i])
-    end
-
-    solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
-
-    for i = 1:length(solution.t)
-        push!(infected,solution.u[i][2])
-        push!(seriously_infected,solution.u[i][3])
-        push!(time, solution.t[i]+days[1])
-    end
-
-    # Determines whether to plot infected or seriously infected graph
-    if infect == 0
-        plot(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected") # Plot the model
-        plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected") # Plot the model
-    else 
-        plot(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected") # Plot the model
-        plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected") # Plot the model
     end
 end
 
