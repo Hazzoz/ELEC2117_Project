@@ -141,14 +141,10 @@ end
 """
 function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
     # Actual data up to day 30
-    #actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
-    #ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
-    #actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
-    #tsi = [21,22,23,24,25,26,27,28,29,30]
-    actual_infected = [11,7,20,3,29,14,11,12,16,10,58]
-    ti = [15,16,17,18,19,20,21,22,23,24,25]
-    actual_seriously_infected = [0,0,1,2,5]
-    tsi = [21,22,23,24,25]
+    actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
+    ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
+    actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
+    tsi = [21,22,23,24,25,26,27,28,29,30]
 
     plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
 
@@ -220,45 +216,69 @@ end
 #   - delta = recovery rate of seriously infected
 #   - alpha = number of recovered people losing immunity
 """
-function error_beta(S0, I0, SI0, R0, days, params, beta_range)
+function error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
     # Actual data up to day 30
     actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
     ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
     actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
     tsi = [21,22,23,24,25,26,27,28,29,30]
 
-    # Create error array and range of betas to test (around the initial guess of 0.037)
-    error_vals = []
+    plot([beta_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
+    beta_min = 1
+
+    # Create error array and range of betas to test
+    previous_error_vals = Float64[]
+    error_vals = Float64[]
     betas = range(beta_range[1], beta_range[2], length=50)
+    ratios = range(ratio_range[1], ratio_range[2], 10)
 
-    # Loops through range of betas
-    for i in betas
-        params.beta = i # Changes value to new beta
-        solution = solve_SIR(S0, I0, SI0, R0, days, params)
+    for l in ratios
+        params.SIratio = l
+        error_vals = Float64[]
+        # Loops through range of betas
+        for i in betas
+            params.beta = i # Changes value to new beta
+            solution = solve_SIR(S0, I0, SI0, R0, days, params)
 
-        current_infected_error = 0
-        current_seriously_infected_error = 0
+            current_infected_error = 0
+            current_seriously_infected_error = 0
 
-        # Loop through each solution value
-        for j = 1:length(solution.t)
-            for k = 1:length(ti)
-                if ti[k] ≈ solution.t[j] atol=0.01 # Check whether time value as approx equal
-                    current_infected_error += (solution[j][2] - actual_infected[k])^2 # Calculate error
+            # Loop through each solution value
+            for j = 1:length(solution.t)
+                for k = 1:length(ti)
+                    if ti[k] ≈ solution.t[j] atol=0.01 # Check whether time value as approx equal
+                        current_infected_error += (solution[j][2] - actual_infected[k])^2 # Calculate error
+                    end
+
                 end
 
-            end
-
-            for k = 1:length(tsi)
-                if tsi[k] ≈ solution.t[j] atol=0.01
-                    current_seriously_infected_error += (solution[j][3] - actual_seriously_infected[k])^2
+                for k = 1:length(tsi)
+                    if tsi[k] ≈ solution.t[j] atol=0.01
+                        current_seriously_infected_error += (solution[j][3] - actual_seriously_infected[k])^2
+                    end
                 end
             end
+            push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at beta value
         end
-        push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at beta value
+
+        if betas[argmin(error_vals)] < beta_min
+            beta_min = betas[argmin(error_vals)]
+        end
+        if isempty(previous_error_vals)
+            previous_error_vals = deepcopy(error_vals)
+        end
+
+        while length(previous_error_vals) < length(error_vals)
+            push!(previous_error_vals,previous_error_vals[end])
+        end
+
+        plot!(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, fillrange=previous_error_vals, colour=:blue)
+
+        previous_error_vals = deepcopy(error_vals)
     end
 
-    println("Beta min: ", betas[argmin(error_vals)])
-    plot(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
+    println("Beta min: ", beta_min)
+    plot!(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, colour=:blue)
 end
 
 function plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range, params2)
