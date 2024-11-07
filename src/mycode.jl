@@ -139,36 +139,66 @@ end
 #   - alpha = number of recovered people losing immunity
 # - infect = determines whether to plot infected or seriously infected data
 """
-function plot_infected(S0, I0, SI0, R0, days, params, infect)
+function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
+    # Actual data up to day 30
+    #actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
+    #ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
+    #actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
+    #tsi = [21,22,23,24,25,26,27,28,29,30]
+    actual_infected = [11,7,20,3,29,14,11,12,16,10,58]
+    ti = [15,16,17,18,19,20,21,22,23,24,25]
+    actual_seriously_infected = [0,0,1,2,5]
+    tsi = [21,22,23,24,25]
+
+    plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
+
+    ratios = range(ratio_range[1], ratio_range[2], 10)
+
+    infected = Float64[]
+    seriously_infected = Float64[]
+    time = Float64[]
+
+    params.SIratio = ratio_range[1]
     solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
 
-    # Actual data up to day 30
-    actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
-    ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
-    actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
-    tsi = [21,22,23,24,25,26,27,28,29,30]
-
-    infected = []
-    seriously_infected = []
-    time = []
+    previous_seriously_infected = Float64[]
 
     for i = 1:length(solution.t)
-        push!(infected,solution.u[i][2])
-        push!(seriously_infected,solution.u[i][3])
-        push!(time, solution.t[i])
+        push!(previous_seriously_infected,solution.u[i][3])
+    end
+
+    for j in ratios
+        params.SIratio = j
+        solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
+
+        infected = Float64[]
+        seriously_infected = Float64[]
+        time = Float64[]
+
+        for i = 1:length(solution.t)
+            push!(infected,solution.u[i][2])
+            push!(seriously_infected,solution.u[i][3])
+            push!(time, solution.t[i])
+        end
+
+        # Determines whether to plot infected or seriously infected graph
+        if infect != 0
+            plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Plot the model
+        end
+
+        previous_seriously_infected = deepcopy(seriously_infected)
     end
 
     # Print associated R0 value
     R0 = params.contacts*params.beta/params.gamma
-    println("R0: ", R0)
+    println("R0: ", round(R0, digits=3))
 
-    # Determines whether to plot infected or seriously infected graph
     if infect == 0
-        plot(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected") # Plot the model
+        plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected") # Plot the model
         plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected") # Plot the model
-    else 
-        plot(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected") # Plot the model
-        plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected") # Plot the model
+    else
+        plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected", colour=:blue) # Plot the model
+        plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected", colour=:red) # Plot the model
     end
 end
 
