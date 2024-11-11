@@ -974,3 +974,103 @@ function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, in
         end
     end
 end
+
+function best_beta_day_plot(S0, I0, SI0, R0, days, params, coverage_range, params2, beta_range, day_range, ratio_range)
+    # Actual data up to day 35
+    actual_infected = [21, 29, 25, 30, 28, 34, 28, 54, 57,92,73,80,109,102,128,135,163,150,211,196,233,247,283,286,332,371,390,404,467,529,598,
+    641,704,702,788,856,854,955,995,1065,1106,1159,1217,1269,1298,1328,1339,1383,1431,1422,1414,1485,1464,1480]
+    ti = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+    actual_seriously_infected = [3, 3, 4, 7, 3, 8, 7, 5, 9,13,15,3,20,13,11,20,16,11,15,18,27,24,28,36,41,35,41,55,63,66,72,80,90,104,109,
+    115,127,135,147,162,163,186,194,200,216,223,241,249,258,275,277,299,302,300]
+    tsi = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+
+    # Initialize ranges for beta, days, coverage, and ratio
+    betas = range(beta_range[1], beta_range[2], length=40)
+    start_days = range(day_range[1], day_range[2], length=day_range[2]-day_range[1]+1)
+    coverages = range(coverage_range[1], coverage_range[2], length=20)
+    ratios = range(ratio_range[1], ratio_range[2], length=20)
+
+    plot([beta_range[1]],[0], labels=nothing)
+
+    # Track minimum error and corresponding beta and day
+    min_error = Inf
+    best_beta = 0
+    best_day = 0
+
+    # Initialize array to store error for plotting
+    beta_errors = Float64[Inf]
+
+    # Loop through each beta
+    for c in coverages
+        params2.p = c
+        for r in ratios
+            params.SIratio = r
+            params2.SIratio = r
+            for start_day in start_days
+                error_vals = Float64[]
+                for b in betas
+                    params.beta = b
+                    params2.beta = b
+
+                    # Solve SIR model for current beta, start day, coverage, and ratio
+                    solution = solve_SIR(S0, I0, SI0, R0, days[1] - (start_day-1), params)
+
+                    infected = Float64[]
+                    seriously_infected = Float64[]
+                    time = Float64[]
+
+                    # Collect results from the first phase
+                    for i = 1:length(solution.t)
+                        push!(infected, solution.u[i][2])
+                        push!(seriously_infected, solution.u[i][3])
+                        push!(time, solution.t[i])
+                    end
+
+                    # Re-solve for second phase
+                    solution = solve_SIR(solution.u[end][1], solution.u[end][2], solution.u[end][3], solution.u[end][4], days[2], params2)
+
+                    for i = 1:length(solution.t)
+                        push!(infected, solution.u[i][2])
+                        push!(seriously_infected, solution.u[i][3])
+                        push!(time, solution.t[i] + start_day)
+                    end
+
+                    # Calculate error (RMSE)
+                    current_infected_error = 0
+                    current_seriously_infected_error = 0
+
+                    for j = 1:length(time)
+                        for k = 1:length(ti)
+                            if abs((ti[k]-(start_day-1)) - time[j]) < 0.01
+                                current_infected_error += (infected[j] - actual_infected[k])^2
+                            end
+                        end
+                        for k = 1:length(tsi)
+                            if abs((tsi[k]-(start_day-1)) - time[j]) < 0.01
+                                current_seriously_infected_error += (seriously_infected[j] - actual_seriously_infected[k])^2
+                            end
+                        end
+                    end
+
+                    push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at coverage value
+                    # Track minimum error across beta and days
+                    if sqrt(current_infected_error + current_seriously_infected_error) < min_error
+                        min_error = sqrt(current_infected_error + current_seriously_infected_error)
+                        best_beta = b
+                        best_day = start_day
+                    end
+                end
+
+                if minimum(error_vals) < minimum(beta_errors)
+                    beta_errors = error_vals
+                end
+
+            end
+        end
+    end
+
+    # Plot error vs beta
+    println("Best Beta: ", best_beta)
+    println("Start Day: ", round(best_day,digits=0))
+    plot!([betas], [beta_errors], xlabel="Beta", ylabel="Error", title="Error vs Beta across Days", labels=nothing, colour=:blue)
+end
