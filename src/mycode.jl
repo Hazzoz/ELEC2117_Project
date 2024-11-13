@@ -104,10 +104,11 @@ Inputs:
 - R0 = Initial Recovered Population
 - days = No. of days modelled 
 - params = array of other necessary parameters, defined by the structs
+- ratio_range = range of proportions of people that become seriously infected
 - infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
 """
-function Level2_plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
-    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 2)
+function Level2_plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect)
+    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 2) # Use plotting function
 end
 
 """
@@ -121,10 +122,11 @@ Inputs:
 - R0 = Initial Recovered Population
 - days = No. of days modelled 
 - params = array of other necessary parameters, defined by the structs
+- ratio_range = range of proportions of people that become seriously infected
 - infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
 """
-function Level3_plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
-    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 3)
+function Level3_plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect)
+    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 3) # Use Plotting Function
 end
 
 """
@@ -138,16 +140,17 @@ Inputs:
 - R0 = Initial Recovered Population
 - days = No. of days modelled 
 - params = array of other necessary parameters, defined by the structs
+- ratio_range = range of proportions of people that become seriously infected
 - infect = determines whether to plot infected or seriously infected data (0 = infected, else = seriously infected)
 - level = which TLT level is being addressed
 """
-function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, level)
+function plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level)
     # Actual data up to day 25
     actual_infected = [11,7,20,3,29,14,11,12,16,10,58]
     ti = [15,16,17,18,19,20,21,22,23,24,25]
     actual_seriously_infected = [0,0,1,2,5]
     tsi = [21,22,23,24,25]
-    if level == 3
+    if level == 3 # Select which TLT Level
         # Actual data up to day 30
         actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
         ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
@@ -155,30 +158,35 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, level
         tsi = [21,22,23,24,25,26,27,28,29,30]
     end
 
-    plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
+    plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing) # Open a base plot
 
-    ratios = range(ratio_range[1], ratio_range[2], 5)
+    ratios = range(ratio_range[1], ratio_range[2], 5) # Create a range of values defined by the ratio range
 
+    # Setup arrays
     infected = Float64[]
     seriously_infected = Float64[]
     time = Float64[]
     previous_infected = Float64[]
     previous_seriously_infected = Float64[]
 
+    # Loop through ratios
     for j in ratios
-        params.SIratio = j
+        params.SIratio = j # Set new SIratio value
         solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
 
+        # Ensure arrays are empty
         infected = Float64[]
         seriously_infected = Float64[]
         time = Float64[]
 
+        # Extract infected, seriously infected, and time graphs
         for i = 1:length(solution.t)
             push!(infected,solution.u[i][2])
             push!(seriously_infected,solution.u[i][3])
             push!(time, solution.t[i])
         end
 
+        # Ensure if fill range arrays aren't empty to avoid erros
         if isempty(previous_infected)
             previous_infected = deepcopy(infected)
         end
@@ -186,23 +194,34 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, level
             previous_seriously_infected = deepcopy(seriously_infected)
         end
 
-        # Determines whether to plot infected or seriously infected graph
-        if infect == 1
-            plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels=nothing, fillrange=previous_infected, colour=:blue) # Plot the model
-        else
-            plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Plot the model
+        # Ensure fill range array is long enough to fill total
+        while length(previous_infected) < length(infected)
+            push!(previous_infected,previous_infected[end])
+        end
+        while length(previous_seriously_infected) < length(seriously_infected)
+            push!(previous_seriously_infected,previous_seriously_infected[end])
         end
 
+        # Determines whether to plot infected or seriously infected graph
+        if infect == 1
+            plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels=nothing, fillrange=previous_infected, colour=:blue) # Added curve to plot 
+        else
+            plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Added curve to plot 
+        end
+
+        # Keep previous curve
         previous_seriously_infected = deepcopy(seriously_infected)
         previous_infected = deepcopy(infected)
     end
 
+    # Get and print reproduction number if level 2
     if level == 2
         # Print associated R0 value
         R0 = params.contacts*params.beta/params.gamma
         println("R0: ", round(R0, digits=3))
     end
 
+    # Plot either infected or seriously infected graphs
     if infect == 1
         plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected", colour=:blue) # Plot the model
         plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected", colour=:red) # Plot the model
@@ -1234,4 +1253,212 @@ function Level5_plot_second_town(S0, I0, SI0, R0, days, params, beta_range, para
         end
         plot!([0], [0], xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected", colour=:blue) # Plot the model
     end
+end
+
+"""
+plot_SIR is a driver function that runs and then plots an SIR model with uncertainties on variables.
+Inputs:
+- S0 = Initial Susceptible Population
+- I0 = Initial Infected Population
+- SI0 = Initial Seriously Infected Population
+- R0 = Initial Recovered Population
+- days = No. of days modelled 
+- params = array of other necessary parameters, defined by the structs
+- beta_range = range of transmission rates of disease
+- ratio_range = range of proportions of people that become seriously infected
+"""
+function plot_SIR_with_uncertainties(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
+    plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing) # Open a base plot
+
+    ratios = range(ratio_range[1], ratio_range[2], 10) # Create a range of values defined by the ratio range
+    betas = range(beta_range[1], beta_range[2], 20) # Create a range of values defined by the beta range
+
+    # Loop through ratios
+    for r in ratios
+        params.SIratio = r # Set new SIratio value
+        previous_infected = Float64[]
+        previous_seriously_infected = Float64[]
+        previous_susceptible = Float64[]
+        previous_recovered = Float64[]
+        for b in betas
+            params.beta = b
+            solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve the SIR model
+
+            # Ensure arrays are empty
+            infected = Float64[]
+            seriously_infected = Float64[]
+            time = Float64[]
+            susceptible = Float64[]
+            recovered = Float64[]
+
+            # Extract infected, seriously infected, and time graphs
+            for i = 1:length(solution.t)
+                push!(infected,solution.u[i][2])
+                push!(seriously_infected,solution.u[i][3])
+                push!(time, solution.t[i])
+                push!(susceptible,solution.u[i][1])
+                push!(recovered,solution.u[i][4])
+            end
+
+            # Ensure if fill range arrays aren't empty to avoid erros
+            if isempty(previous_infected)
+                previous_infected = deepcopy(infected)
+            end
+            if isempty(previous_seriously_infected)
+                previous_seriously_infected = deepcopy(seriously_infected)
+            end
+            if isempty(susceptible)
+                previous_susceptible = deepcopy(susceptible)
+            end
+            if isempty(recovered)
+                previous_recovered = deepcopy(recovered)
+            end
+
+            # Ensure fill range arrays are long enough to fill total
+            while length(previous_infected) < length(infected)
+                push!(previous_infected,previous_infected[end])
+            end
+            while length(previous_seriously_infected) < length(seriously_infected)
+                push!(previous_seriously_infected,previous_seriously_infected[end])
+            end
+            while length(previous_susceptible) < length(susceptible)
+                push!(previous_susceptible,previous_susceptible[end])
+            end
+            while length(previous_seriously_infected) < length(recovered)
+                push!(previous_recovered,previous_recovered[end])
+            end
+
+            # Determines whether to plot infected or seriously infected graph
+            plot!(time, infected, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_infected, colour=:yellow) # Added curve to plot 
+            plot!(time, seriously_infected, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_seriously_infected, colour=:red) # Added curve to plot
+            plot!(time, susceptible, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Added curve to plot
+            plot!(time, recovered, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_seriously_infected, colour=:green) # Added curve to plot 
+
+            # Keep previous curve
+            previous_seriously_infected = deepcopy(seriously_infected)
+            previous_infected = deepcopy(infected)
+            previous_susceptible = deepcopy(susceptible)
+            previous_recovered = deepcopy(recovered)
+        end
+    end
+
+    # Plot graph
+    plot!([0], [0], xlabel="Time", ylabel="Population", title="Infection Behaviour", labels="Infected", colour=:yellow) # Plot the model
+    plot!([0], [0], xlabel="Time", ylabel="Population", labels="Seriously Infected", colour=:red) # Plot the model
+    plot!([0], [0], xlabel="Time", ylabel="Population", labels="Susceptible", colour=:blue) # Plot the model
+    plot!([0], [0], xlabel="Time", ylabel="Population", labels="Recovered", colour=:green) # Plot the model
+end
+
+"""
+plot_SIR_intervention_with_uncertainties is a function that runs and then plots an 
+SIR model with an intervention and uncertainties.
+Inputs:
+- S0 = Initial Susceptible Population
+- I0 = Initial Infected Population
+- SI0 = Initial Seriously Infected Population
+- R0 = Initial Recovered Population
+- days = No. of days modelled 
+- params = array of other necessary parameters, defined by the structs
+- params2 = array of other necessary parameters, defined by the structs
+- beta_range = range of transmission rates of disease
+- ratio_range = range of proportions of people that become seriously infected
+- coverage_range = range of proportions of people that followed the intervention procedure
+"""
+function plot_SIR_intervention_with_uncertainties(S0, I0, SI0, R0, days, params, params2, beta_range, ratio_range, coverage_range)
+    plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing) # Open a base plot
+
+    ratios = range(ratio_range[1], ratio_range[2], 10) # Create a range of values defined by the ratio range
+    betas = range(beta_range[1], beta_range[2], 20) # Create a range of values defined by the beta range
+    coverages = range(coverage_range[1], coverage_range[2], 20) # Create a range of values defined by the beta range
+
+    # Loop through ratios
+    for c in coverages
+        params2.p = c
+        for r in ratios
+            params.SIratio = r # Set new SIratio value
+            params2.SIratio = r
+            previous_infected = Float64[]
+            previous_seriously_infected = Float64[]
+            previous_susceptible = Float64[]
+            previous_recovered = Float64[]
+            for b in betas
+                params.beta = b
+                solution = solve_SIR(S0, I0, SI0, R0, days[1], params) # Solve the SIR model
+
+                # Ensure arrays are empty
+                infected = Float64[]
+                seriously_infected = Float64[]
+                time = Float64[]
+                susceptible = Float64[]
+                recovered = Float64[]
+
+                # Extract infected, seriously infected, and time graphs
+                for i = 1:length(solution.t)
+                    push!(infected,solution.u[i][2])
+                    push!(seriously_infected,solution.u[i][3])
+                    push!(time, solution.t[i])
+                    push!(susceptible,solution.u[i][1])
+                    push!(recovered,solution.u[i][4])
+                end
+
+                params2.beta = b
+                solution = solve_SIR(solution.u[end][1], solution.u[end][2], solution.u[end][3], solution.u[end][4], days[2], params2) # Solve the SIR model
+
+                # Extract infected, seriously infected, and time graphs
+                for i = 1:length(solution.t)
+                    push!(infected,solution.u[i][2])
+                    push!(seriously_infected,solution.u[i][3])
+                    push!(time, solution.t[i]+days[1])
+                    push!(susceptible,solution.u[i][1])
+                    push!(recovered,solution.u[i][4])
+                end
+
+                # Ensure if fill range arrays aren't empty to avoid erros
+                if isempty(previous_infected)
+                    previous_infected = deepcopy(infected)
+                end
+                if isempty(previous_seriously_infected)
+                    previous_seriously_infected = deepcopy(seriously_infected)
+                end
+                if isempty(susceptible)
+                    previous_susceptible = deepcopy(susceptible)
+                end
+                if isempty(recovered)
+                    previous_recovered = deepcopy(recovered)
+                end
+
+                # Ensure fill range arrays are long enough to fill total
+                while length(previous_infected) < length(infected)
+                    push!(previous_infected,previous_infected[end])
+                end
+                while length(previous_seriously_infected) < length(seriously_infected)
+                    push!(previous_seriously_infected,previous_seriously_infected[end])
+                end
+                while length(previous_susceptible) < length(susceptible)
+                    push!(previous_susceptible,previous_susceptible[end])
+                end
+                while length(previous_seriously_infected) < length(recovered)
+                    push!(previous_recovered,previous_recovered[end])
+                end
+
+                # Determines whether to plot infected or seriously infected graph
+                plot!(time, infected, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_infected, colour=:yellow) # Added curve to plot 
+                plot!(time, seriously_infected, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_seriously_infected, colour=:red) # Added curve to plot
+                plot!(time, susceptible, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Added curve to plot
+                plot!(time, recovered, xlabel="Time", ylabel="Population", labels=nothing, fillrange=previous_seriously_infected, colour=:green) # Added curve to plot 
+
+                # Keep previous curve
+                previous_seriously_infected = deepcopy(seriously_infected)
+                previous_infected = deepcopy(infected)
+                previous_susceptible = deepcopy(susceptible)
+                previous_recovered = deepcopy(recovered)
+            end
+        end
+    end
+
+    # Plot graph
+    plot!([0], [0], xlabel="Time", ylabel="Population", title="Infection Behaviour", labels="Infected", colour=:yellow) # Plot the model
+    plot!([0], [0], xlabel="Time", ylabel="Population", labels="Seriously Infected", colour=:red) # Plot the model
+    plot!([0], [0], xlabel="Time", ylabel="Population", labels="Susceptible", colour=:blue) # Plot the model
+    plot!([0], [0], xlabel="Time", ylabel="Population", labels="Recovered", colour=:green) # Plot the model
 end
