@@ -19,23 +19,16 @@ mutable struct SIRFoIIntervention
     p::Float64 # Coverage rate
 end
 
-###############################################################
-# This SIR! is a function that represents the differential
-# equations that defines a more detailed force of infection
-# version of the SIR model
-# Inputs:
-# - dP = array of gradients for each population
-# - P = array of current values for each population
-# - params = array of other necessary parameters
-#   - beta = transmission chance of any interaction
-#   - gamma = recovery rate
-#   - contacts = number of daily contacts a person has
-#   - SIratio = proportion of people being seriously infected
-#   - delta = recovery rate of seriously infected
-#   - alpha = number of recovered people losing immunity
-#   - lambdas = recorded array of lambdas with timestamps
-# - t = timespan
-###############################################################
+"""
+This SIR! is a function that represents the differential
+equations that defines a more detailed force of infection
+version of the SIR model
+Inputs:
+- dP = array of gradients for each population
+- P = array of current values for each population
+- params = array of other necessary parameters, defined by the structs
+- t = timespan
+"""
 function SIR!(dP, P, params::SIRFoI, t)
     N = P[1] + P[2] + P[3] + P[4] # Total Population
     lambda = P[2]/N*params.beta*params.contacts # Force of Infection
@@ -45,23 +38,16 @@ function SIR!(dP, P, params::SIRFoI, t)
     dP[4] = params.gamma*(1-params.SIratio)*P[2] + params.delta*P[3] - params.alpha*P[4] # Change in Recovered Population
 end
 
-###############################################################
-# This SIR! is a function that represents the differential
-# equations that defines a more detailed force of infection
-# version of the SIR model
-# Inputs:
-# - dP = array of gradients for each population
-# - P = array of current values for each population
-# - params = array of other necessary parameters
-#   - beta = transmission chance of any interaction
-#   - gamma = recovery rate
-#   - contacts = number of daily contacts a person has
-#   - SIratio = proportion of people being seriously infected
-#   - delta = recovery rate of seriously infected
-#   - alpha = number of recovered people losing immunity
-#   - lambdas = recorded array of lambdas with timestamps
-# - t = timespan
-###############################################################
+"""
+This SIR! is a function that represents the differential
+equations that defines a more detailed force of infection
+version of the SIR model
+Inputs:
+- dP = array of gradients for each population
+- P = array of current values for each population
+- params = array of other necessary parameters
+- t = timespan
+"""
 function SIR!(dP, P, params::SIRFoIIntervention, t)
     N = P[1] + P[2] + P[3] + P[4] # Total Population
     lambda = P[2]/N*params.beta*params.contacts*(1-params.epsilon*params.p) # Force of Infection
@@ -92,7 +78,7 @@ function solve_SIR(S0, I0, SI0, R0, days, params)
 end
 
 """
-plot_SIR is a driver function that runs and then plots and SIR model.
+plot_SIR is a driver function that runs and then plots an SIR model.
 Inputs:
 - S0 = Initial Susceptible Population
 - I0 = Initial Infected Population
@@ -108,6 +94,40 @@ function plot_SIR(S0, I0, SI0, R0, days, params)
 end
 
 """
+Level2_plot_infected is a driver function that plots either the infected or
+seriously infected data against the true data to allow for visual
+inspection of the models fit. This function is for plotting the level 2 data.
+Inputs:
+- S0 = Initial Susceptible Population
+- I0 = Initial Infected Population
+- SI0 = Initial Seriously Infected Population
+- R0 = Initial Recovered Population
+- days = No. of days modelled 
+- params = array of other necessary parameters, defined by the structs
+- infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
+"""
+function Level2_plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
+    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 2)
+end
+
+"""
+Level3_plot_infected is a driver function that plots either the infected or
+seriously infected data against the true data to allow for visual
+inspection of the models fit. This function is for plotting the level 3 data.
+Inputs:
+- S0 = Initial Susceptible Population
+- I0 = Initial Infected Population
+- SI0 = Initial Seriously Infected Population
+- R0 = Initial Recovered Population
+- days = No. of days modelled 
+- params = array of other necessary parameters, defined by the structs
+- infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
+"""
+function Level3_plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
+    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 3)
+end
+
+"""
 plot_infected is a function that plots either the infected or
 seriously infected data against the true data to allow for visual
 inspection of the models fit.
@@ -119,17 +139,25 @@ Inputs:
 - days = No. of days modelled 
 - params = array of other necessary parameters, defined by the structs
 - infect = determines whether to plot infected or seriously infected data (0 = infected, else = seriously infected)
+- level = which TLT level is being addressed
 """
-function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
-    # Actual data up to day 30
-    actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
-    ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
-    actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
-    tsi = [21,22,23,24,25,26,27,28,29,30]
+function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, level)
+    # Actual data up to day 25
+    actual_infected = [11,7,20,3,29,14,11,12,16,10,58]
+    ti = [15,16,17,18,19,20,21,22,23,24,25]
+    actual_seriously_infected = [0,0,1,2,5]
+    tsi = [21,22,23,24,25]
+    if level == 3
+        # Actual data up to day 30
+        actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
+        ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
+        actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
+        tsi = [21,22,23,24,25,26,27,28,29,30]
+    end
 
     plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
 
-    ratios = range(ratio_range[1], ratio_range[2], 10)
+    ratios = range(ratio_range[1], ratio_range[2], 5)
 
     infected = Float64[]
     seriously_infected = Float64[]
@@ -159,7 +187,7 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
         end
 
         # Determines whether to plot infected or seriously infected graph
-        if infect == 0
+        if infect == 1
             plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels=nothing, fillrange=previous_infected, colour=:blue) # Plot the model
         else
             plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Plot the model
@@ -169,11 +197,13 @@ function plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range)
         previous_infected = deepcopy(infected)
     end
 
-    # Print associated R0 value
-    R0 = params.contacts*params.beta/params.gamma
-    println("R0: ", round(R0, digits=3))
+    if level == 2
+        # Print associated R0 value
+        R0 = params.contacts*params.beta/params.gamma
+        println("R0: ", round(R0, digits=3))
+    end
 
-    if infect == 0
+    if infect == 1
         plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels="Infected", colour=:blue) # Plot the model
         plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected", colour=:red) # Plot the model
     else
@@ -195,7 +225,7 @@ Inputs:
 - beta_range = range of betas that are to be tested
 - ratio_range = range of proportions of people that become seriously infected
 """
-function error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
+function Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
     # Actual data up to day 30
     actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
     ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
@@ -210,7 +240,7 @@ function error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
     previous_error_vals = Float64[]
     error_vals = Float64[]
     betas = range(beta_range[1], beta_range[2], length=50)
-    ratios = range(ratio_range[1], ratio_range[2], 10)
+    ratios = range(ratio_range[1], ratio_range[2], 5)
 
     for l in ratios
         params.SIratio = l
@@ -277,7 +307,7 @@ Inputs:
 - params2 = array of other necessary parametersfor the model after intervention, defined by the structs
 - ratio_range = range of proportions of people that become seriously infected
 """
-function plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range)
+function Level4_1_plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range)
     max_infected_peak = 0
     min_infected_peak = 0
     max_seriously_infected_peak = 0
@@ -286,7 +316,7 @@ function plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range,
     plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, colour=:black)
 
     ratios = range(ratio_range[1], ratio_range[2], 20)
-    betas = range(beta_range[1], beta_range[2], length=50)
+    betas = range(beta_range[1], beta_range[2], length=20)
 
     infected = Float64[]
     seriously_infected = Float64[]
@@ -379,10 +409,10 @@ Inputs:
 - beta_range = range of betas that are to be tested
 - params2 = array of other necessary parametersfor the model after intervention, defined by the structs
 - ratio_range = range of proportions of people that become seriously infected
-- infect = determines whether to plot infected or seriously infected data (0 = infected, else = seriously infected)
-- intervent = determines whether to plot the intervention or no intervention curve (0 = intervention, else = no intervention)
+- infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
+- intervent = determines whether to plot the intervention or no intervention curve (1 = intervention, else = no intervention)
 """
-function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, infect, intervene)
+function Level4_1_compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, infect, intervene)
     max_infected_peak = 0
     min_infected_peak = 0
     max_seriously_infected_peak = 0
@@ -393,19 +423,19 @@ function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2
     min_seriously_infected_peak_intervention = 0
 
     ratios = range(ratio_range[1], ratio_range[2], length=30)
-    betas = range(beta_range[1], beta_range[2], length=30)
+    betas = range(beta_range[1], beta_range[2], length=20)
     plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title=" ", labels=nothing, colour=:black)
 
-    previous_infected = Float64[]
-    previous_seriously_infected = Float64[]
-    if intervene == 0
+    if intervene != 1
         for r in ratios
             params.SIratio = r
+            previous_infected = Float64[]
+            previous_seriously_infected = Float64[]
 
             # Loops through range of betas
             for j in betas
                 params.beta = j # Changes value to new beta
-                solution = solve_SIR(S0, I0, SI0, R0, days[1]+days[2], params)
+                solution = solve_SIR(S0, I0, SI0, R0, (days[1]+days[2]), params)
 
                 infected = Float64[]
                 seriously_infected = Float64[]
@@ -429,7 +459,7 @@ function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2
                     push!(previous_seriously_infected,previous_seriously_infected[end])
                 end
 
-                if infect != 0
+                if infect == 1
                     plot!(solution.t, infected, xlabel="Time (Days)", ylabel="Population", title="Infected No Intervention", labels=nothing, color=:red, fillrange=previous_infected)
                 else
                     plot!(solution.t, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected No Intervention", labels=nothing, color=:red, fillrange=previous_seriously_infected)
@@ -497,10 +527,10 @@ function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2
                     push!(previous_seriously_infected,previous_seriously_infected[end])
                 end
 
-                if infect != 0
-                    plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected Intervention", labels=nothing, color=:blue, fillrange=previous_infected, alpha=0.1)
+                if infect == 1
+                    plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected Intervention", labels=nothing, color=:blue, fillrange=previous_infected)
                 else
-                    plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected Intervention", labels=nothing, color=:blue, fillrange=previous_seriously_infected, alpha=0.1)
+                    plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected Intervention", labels=nothing, color=:blue, fillrange=previous_seriously_infected)
                 end
 
                 if max_infected_peak_intervention < maximum(infected)
@@ -522,133 +552,20 @@ function compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2
         end
     end
 
-    if infect == 0
-        if intervene != 0
+    if infect == 1
+        if intervene != 1
             println("Peak Infected No Intervention: ", round(min_infected_peak,digits=0), " - ", round(max_infected_peak,digits=0))
         else
             println("Peak Infected Intervention: ", round(min_infected_peak_intervention,digits=0), " - ", round(max_infected_peak_intervention,digits=0))
         end
     else
-        if intervene != 0
+        if intervene != 1
             println("Peak Seriously Infected No Intervention: ", round(min_seriously_infected_peak,digits=0), " - ", round(max_seriously_infected_peak,digits=0))
         else
             println("Peak Seriously Infected Intervention: ", round(min_seriously_infected_peak_intervention,digits=0), " - ", round(max_seriously_infected_peak_intervention,digits=0))
         end
     end
-end
-
-"""
-error_coverage is a function that plots the RSME of a range of coverage values
-using the predicted and actual data provided. It is incorporates the uncertainty
-of beta and ratio, and can be plotted logarithmically to better highlight errors.
-Inputs:
-- S0 = Initial Susceptible Population
-- I0 = Initial Infected Population
-- SI0 = Initial Seriously Infected Population
-- R0 = Initial Recovered Population
-- days = No. of days modelled 
-- params = array of other necessary parameters for the model before intervention, defined by the structs
-- coverage_range = range of coverages that are to be tested
-- params2 = array of other necessary parametersfor the model after intervention, defined by the structs
-- beta_range = range of transmission rates of disease
-- ratio_range = range of proportions of people that become seriously infected
-- log = plots the error logarithmically (0 = log, else = not log)
-"""
-function error_coverage(S0, I0, SI0, R0, days, params, coverage_range, params2, beta_range, ratio_range, log)
-    # Actual data up to day 55
-    actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352]
-    ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
-    actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4,22,0,15,48,38,57,9,18,20,0,41,15,35,36,27,38,24,40,34,57,18,29,63,66,119]
-    tsi = [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
-
-    # Create error array and range of coverages to test
-    error_vals = Float64[]
-    coverages = range(coverage_range[1], coverage_range[2], length=50)
-    betas = range(beta_range[1], beta_range[2], length=50)
-    ratios = range(ratio_range[1], ratio_range[2], length=50)
-
-    plot([coverage_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
-    coverage_min = 1
-    min = S0
-
-    for r in ratios
-        params.SIratio = r
-        params2.SIratio = r
-        previous_error_vals = Float64[]
-        error_vals = Float64[]
-
-        for b in betas
-            params.beta = b
-            params2.beta = b
-            error_vals = Float64[]
-            # Loops through range of coverages
-            for j in coverages
-                solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
-
-                infected = Float64[]
-                seriously_infected = Float64[]
-                time = Float64[]
-
-                for i = 1:length(solution.t)
-                    push!(infected,solution.u[i][2])
-                    push!(seriously_infected,solution.u[i][3])
-                    push!(time, solution.t[i])
-                end
-
-                params2.p = j
-                solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
-
-                for i = 1:length(solution.t)
-                    push!(infected,solution.u[i][2])
-                    push!(seriously_infected,solution.u[i][3])
-                    push!(time, solution.t[i]+days[1])
-                end
-
-                current_infected_error = 0
-                current_seriously_infected_error = 0
-
-                # Loop through each solution value
-                for j = 1:length(time)
-                    for k = 1:length(ti)
-                        if ti[k] ≈ time[j] atol=0.01 # Check whether time value as approx equal
-                            current_infected_error += (infected[j] - actual_infected[k])^2 # Calculate error
-                        end
-                    end
-
-                    for k = 1:length(tsi)
-                        if tsi[k] ≈ time[j] atol=0.01
-                            current_seriously_infected_error += (seriously_infected[j] - actual_seriously_infected[k])^2
-                        end
-                    end
-                end
-                if log == 0
-                    push!(error_vals, log(sqrt(current_infected_error + current_seriously_infected_error))) # Calculate RSME at coverage value
-                else
-                    push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at coverage value
-                end
-            end
-
-            if minimum(error_vals) < min
-                min = minimum(error_vals)
-                coverage_min = coverages[argmin(error_vals)]
-            end
-            if isempty(previous_error_vals)
-                previous_error_vals = deepcopy(error_vals)
-            end
-    
-            while length(previous_error_vals) < length(error_vals)
-                push!(previous_error_vals,previous_error_vals[end])
-            end
-    
-            plot!(coverages, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, fillrange=previous_error_vals, colour=:blue)
-    
-            previous_error_vals = deepcopy(error_vals)
-        end
-
-    end
-
-    println("Coverage min: ", coverage_min)
-    plot!(coverages, error_vals, xlabel="Coverage", ylabel="Error", title="Coverage vs Error", labels=nothing)
+    plot!([0],[0],labels=nothing)
 end
 
 """
@@ -662,12 +579,12 @@ Inputs:
 - R0 = Initial Recovered Population
 - days = No. of days modelled 
 - params = array of other necessary parameters for the model before intervention, defined by the structs
-- infect = determines whether to plot infected or seriously infected data (0 = infected, else = seriously infected)
+- infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
 - params2 = array of other necessary parametersfor the model after intervention, defined by the structs, with new coverage
 - ratio_range = range of proportions of people that become seriously infected
 - beta_range = range of transmission rates of disease
 """
-function plot_coverage(S0, I0, SI0, R0, days, params, infect, params2, ratio_range, beta_range)
+function Level4_2_plot_coverage(S0, I0, SI0, R0, days, params,  beta_range, params2, ratio_range, infect)
     # Actual data up to day 55
     actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352]
     ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
@@ -727,7 +644,7 @@ function plot_coverage(S0, I0, SI0, R0, days, params, infect, params2, ratio_ran
             end
 
             # Determines whether to plot infected or seriously infected graph
-            if infect == 0
+            if infect == 1
                 plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels=nothing, fillrange=previous_infected, colour=:blue) # Plot the model
             else
                 plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Plot the model
@@ -738,7 +655,7 @@ function plot_coverage(S0, I0, SI0, R0, days, params, infect, params2, ratio_ran
         end
     end
 
-    if infect == 0
+    if infect == 1
         plot!([0], [0], xlabel="Time", ylabel="Population", title="Infected", labels="Infected", colour=:blue) # Plot the model
         plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected", colour=:red) # Plot the model
     else
@@ -747,7 +664,119 @@ function plot_coverage(S0, I0, SI0, R0, days, params, infect, params2, ratio_ran
     end
 end
 
-function plot_coverage_with_error(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range)
+"""
+error_coverage is a function that plots the RSME of a range of coverage values
+using the predicted and actual data provided. It is incorporates the uncertainty
+of beta and ratio, and can be plotted logarithmically to better highlight errors.
+Inputs:
+- S0 = Initial Susceptible Population
+- I0 = Initial Infected Population
+- SI0 = Initial Seriously Infected Population
+- R0 = Initial Recovered Population
+- days = No. of days modelled 
+- params = array of other necessary parameters for the model before intervention, defined by the structs
+- coverage_range = range of coverages that are to be tested
+- params2 = array of other necessary parametersfor the model after intervention, defined by the structs
+- beta_range = range of transmission rates of disease
+- ratio_range = range of proportions of people that become seriously infected
+- logarithm = plots the error logarithmically (1 = log, else = not log)
+"""
+function Level4_2_error_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range, logarithm)
+    # Actual data up to day 55
+    actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352]
+    ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
+    actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4,22,0,15,48,38,57,9,18,20,0,41,15,35,36,27,38,24,40,34,57,18,29,63,66,119]
+    tsi = [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55]
+
+    coverages = range(coverage_range[1], coverage_range[2], length=50)
+    betas = range(beta_range[1], beta_range[2], length=40)
+    ratios = range(ratio_range[1], ratio_range[2], length=10)
+
+    plot([coverage_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
+    coverage_min = 1
+    min = S0
+
+    for r in ratios
+        params.SIratio = r
+        params2.SIratio = r
+        previous_error_vals = Float64[]
+        error_vals = Float64[]
+
+        for b in betas
+            params.beta = b
+            params2.beta = b
+            error_vals = Float64[]
+            # Loops through range of coverages
+            for j in coverages
+                solution = solve_SIR(S0, I0, SI0, R0, days[1], params)
+
+                infected = Float64[]
+                seriously_infected = Float64[]
+                time = Float64[]
+
+                for i = 1:length(solution.t)
+                    push!(infected,solution.u[i][2])
+                    push!(seriously_infected,solution.u[i][3])
+                    push!(time, solution.t[i])
+                end
+
+                params2.p = j
+                solution = solve_SIR(solution.u[end][1],solution.u[end][2],solution.u[end][3],solution.u[end][4],days[2], params2)
+
+                for i = 1:length(solution.t)
+                    push!(infected,solution.u[i][2])
+                    push!(seriously_infected,solution.u[i][3])
+                    push!(time, solution.t[i]+days[1])
+                end
+
+                current_infected_error = 0
+                current_seriously_infected_error = 0
+
+                # Loop through each solution value
+                for j = 1:length(time)
+                    for k = 1:length(ti)
+                        if ti[k] ≈ time[j] atol=0.01 # Check whether time value as approx equal
+                            current_infected_error += (infected[j] - actual_infected[k])^2 # Calculate error
+                        end
+                    end
+
+                    for k = 1:length(tsi)
+                        if tsi[k] ≈ time[j] atol=0.01
+                            current_seriously_infected_error += (seriously_infected[j] - actual_seriously_infected[k])^2
+                        end
+                    end
+                end
+                if logarithm == 1
+                    push!(error_vals, log(sqrt(current_infected_error + current_seriously_infected_error))) # Calculate RSME at coverage value
+                else
+                    push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at coverage value
+                end
+            end
+
+            if minimum(error_vals) < min
+                min = minimum(error_vals)
+                coverage_min = coverages[argmin(error_vals)]
+            end
+            if isempty(previous_error_vals)
+                previous_error_vals = deepcopy(error_vals)
+            end
+    
+            while length(previous_error_vals) < length(error_vals)
+                push!(previous_error_vals,previous_error_vals[end])
+            end
+    
+            plot!(coverages, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, fillrange=previous_error_vals, colour=:blue)
+    
+            previous_error_vals = deepcopy(error_vals)
+        end
+
+    end
+
+    println("Coverage min: ", coverage_min)
+    plot!([0], [0], xlabel="Coverage", ylabel="Error", title="Coverage vs Error", labels=nothing)
+end
+
+function Level4_2_plot_coverage_with_error(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range)
     max_infected_peak = 0
     min_infected_peak = 0
     max_seriously_infected_peak = 0
@@ -755,21 +784,21 @@ function plot_coverage_with_error(S0, I0, SI0, R0, days, params, beta_range, par
 
     plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, colour=:black)
 
-    ratios = range(ratio_range[1], ratio_range[2], 50)
-    betas = range(beta_range[1], beta_range[2], length=100)
-    coverages = range(coverage_range[1], coverage_range[2], length=50)
+    ratios = range(ratio_range[1], ratio_range[2], 10)
+    betas = range(beta_range[1], beta_range[2], length=30)
+    coverages = range(coverage_range[1], coverage_range[2], length=30)
 
     infected = Float64[]
     seriously_infected = Float64[]
     time = Float64[] 
-    previous_infected = Float64[]
-    previous_seriously_infected = Float64[]
 
     for c in coverages
         params2.p = c
         for r in ratios
             params.SIratio = r
             params2.SIratio = r
+            previous_infected = Float64[]
+            previous_seriously_infected = Float64[]
 
             # Loops through range of betas
             for j in betas
@@ -840,7 +869,7 @@ function plot_coverage_with_error(S0, I0, SI0, R0, days, params, beta_range, par
 end
 
 
-function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, infect, ratio_range, coverage_range, intervene)
+function Level4_2_compare_intervention_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range, infect, intervene)
     max_infected_peak = 0
     min_infected_peak = 0
     max_seriously_infected_peak = 0
@@ -850,20 +879,19 @@ function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, in
     max_seriously_infected_peak_intervention = 0
     min_seriously_infected_peak_intervention = 0
 
-    ratios = range(ratio_range[1], ratio_range[2], length=10)
+    ratios = range(ratio_range[1], ratio_range[2], length=20)
     betas = range(beta_range[1], beta_range[2], length=20)
     coverages = range(coverage_range[1], coverage_range[2], length=15)
     plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title=" ", labels=nothing, colour=:black)
 
-    previous_infected = Float64[]
-    previous_seriously_infected = Float64[]
-
-    if intervene == 0
+    if intervene != 1
         for c in coverages
             params2.p = c
             for r in ratios
                 params.SIratio = r
                 # Loops through range of betas
+                previous_infected = Float64[]
+                previous_seriously_infected = Float64[]
                 for j in betas
                     params.beta = j # Changes value to new beta
                     solution = solve_SIR(S0, I0, SI0, R0, days[1]+days[2], params)
@@ -890,7 +918,7 @@ function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, in
                         push!(previous_seriously_infected,previous_seriously_infected[end])
                     end
 
-                    if infect == 0
+                    if infect == 1
                         plot!(solution.t, infected, xlabel="Time (Days)", ylabel="Population", title="Infected No Intervention", labels=nothing, color=:red, fillrange=previous_infected)
                     else
                         plot!(solution.t, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected No Intervention", labels=nothing, color=:red, fillrange=previous_seriously_infected)
@@ -921,7 +949,8 @@ function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, in
             for r in ratios
                 params.SIratio = r
                 params2.SIratio = r
-
+                previous_infected = Float64[]
+                previous_seriously_infected = Float64[]
                 # Loops through range of betas
                 for j in betas
                     params.beta = j # Changes value to new beta
@@ -960,7 +989,7 @@ function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, in
                         push!(previous_seriously_infected,previous_seriously_infected[end])
                     end
 
-                    if infect == 0
+                    if infect == 1
                         plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected Intervention", labels=nothing, color=:blue, fillrange=previous_infected)
                     else
                         plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Seriously Infected No Intervention", labels=nothing, color=:blue, fillrange=previous_seriously_infected)
@@ -986,29 +1015,37 @@ function compare_coverage(S0, I0, SI0, R0, days, params, beta_range, params2, in
         end
     end
 
-    if infect == 0
-        if intervene == 0
+    if infect == 1
+        if intervene != 1
             println("Peak Infected No Intervention: ", round(min_infected_peak,digits=0), " - ", round(max_infected_peak,digits=0))
         else
             println("Peak Infected Intervention: ", round(min_infected_peak_intervention,digits=0), " - ", round(max_infected_peak_intervention,digits=0))
         end
     else
-        if intervene == 0
+        if intervene != 1
             println("Peak Seriously Infected No Intervention: ", round(min_seriously_infected_peak,digits=0), " - ", round(max_seriously_infected_peak,digits=0))
         else
             println("Peak Seriously Infected Intervention: ", round(min_seriously_infected_peak_intervention,digits=0), " - ", round(max_seriously_infected_peak_intervention,digits=0))
         end
     end
+    plot!([0],[0], labels=nothing)
 end
 
-function best_beta_day_plot(S0, I0, SI0, R0, days, params, coverage_range, params2, beta_range, day_range, ratio_range)
-    # Actual data up to day 35
+function Level5_best_beta_day_plot(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range, town, day_range)
+    # Actual data up to day 80
     actual_infected = [21, 29, 25, 30, 28, 34, 28, 54, 57,92,73,80,109,102,128,135,163,150,211,196,233,247,283,286,332,371,390,404,467,529,598,
     641,704,702,788,856,854,955,995,1065,1106,1159,1217,1269,1298,1328,1339,1383,1431,1422,1414,1485,1464,1480]
     ti = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
     actual_seriously_infected = [3, 3, 4, 7, 3, 8, 7, 5, 9,13,15,3,20,13,11,20,16,11,15,18,27,24,28,36,41,35,41,55,63,66,72,80,90,104,109,
     115,127,135,147,162,163,186,194,200,216,223,241,249,258,275,277,299,302,300]
     tsi = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+    if town == 1
+        # Actual data up to day 55
+        actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352,385,221,420,544,329,440,427,369,606,416,546,475,617,593,352,337,473,673,653,523,602,551,686,556,600]
+        ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+        actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4,22,0,15,48,38,57,9,18,20,0,41,15,35,36,27,38,24,40,34,57,18,29,63,66,119,76,95,28,109,136,119,104,121,93,147,129,130,161,133,136,138,139,181,181,218,183,167,164,219,220]
+        tsi = [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+    end
 
     # Initialize ranges for beta, days, coverage, and ratio
     betas = range(beta_range[1], beta_range[2], length=40)
@@ -1086,7 +1123,7 @@ function best_beta_day_plot(S0, I0, SI0, R0, days, params, coverage_range, param
                         best_day = start_day
                     end
                 end
-
+                plot!([betas], [error_vals], labels=nothing, colour=:blue)
                 if minimum(error_vals) < minimum(beta_errors)
                     beta_errors = error_vals
                 end
@@ -1098,10 +1135,10 @@ function best_beta_day_plot(S0, I0, SI0, R0, days, params, coverage_range, param
     # Plot error vs beta
     println("Best Beta: ", best_beta)
     println("Start Day: ", round(best_day,digits=0))
-    plot!([betas], [beta_errors], xlabel="Beta", ylabel="Error", title="Error vs Beta across Days", labels=nothing, colour=:blue)
+    plot!([betas], [beta_errors], xlabel="Beta", ylabel="Error", title="Error vs Beta across Days", labels=nothing, colour=:red)
 end
 
-function plot_second_town(S0, I0, SI0, R0, days, params, infect, params2, ratio_range, beta_range, coverage_range, start_day)
+function Level5_plot_second_town(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range, start_day, town, infect, plot_actual)
     # Actual data up to day 80
     actual_infected = [21, 29, 25, 30, 28, 34, 28, 54, 57,92,73,80,109,102,128,135,163,150,211,196,233,247,283,286,332,371,390,404,467,529,598,
     641,704,702,788,856,854,955,995,1065,1106,1159,1217,1269,1298,1328,1339,1383,1431,1422,1414,1485,1464,1480]
@@ -1109,6 +1146,13 @@ function plot_second_town(S0, I0, SI0, R0, days, params, infect, params2, ratio_
     actual_seriously_infected = [3, 3, 4, 7, 3, 8, 7, 5, 9,13,15,3,20,13,11,20,16,11,15,18,27,24,28,36,41,35,41,55,63,66,72,80,90,104,109,
     115,127,135,147,162,163,186,194,200,216,223,241,249,258,275,277,299,302,300]
     tsi = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+    if town == 1
+        # Actual data up to day 55
+        actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352,385,221,420,544,329,440,427,369,606,416,546,475,617,593,352,337,473,673,653,523,602,551,686,556,600]
+        ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+        actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4,22,0,15,48,38,57,9,18,20,0,41,15,35,36,27,38,24,40,34,57,18,29,63,66,119,76,95,28,109,136,119,104,121,93,147,129,130,161,133,136,138,139,181,181,218,183,167,164,219,220]
+        tsi = [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
+    end
 
     plot([start_day],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
 
@@ -1119,14 +1163,15 @@ function plot_second_town(S0, I0, SI0, R0, days, params, infect, params2, ratio_
     infected = Float64[]
     seriously_infected = Float64[]
     time = Float64[]
-    previous_infected = Float64[]
-    previous_seriously_infected = Float64[]
 
     for c in coverages
         params2.p = c
         for r in ratios
             params.SIratio = r
             params2.SIratio = r
+            previous_infected = Float64[]
+            previous_seriously_infected = Float64[]
+
 
             for b in betas
                 params.beta = b
@@ -1166,7 +1211,7 @@ function plot_second_town(S0, I0, SI0, R0, days, params, infect, params2, ratio_
                 end
 
                 # Determines whether to plot infected or seriously infected graph
-                if infect == 0
+                if infect == 1
                     plot!(time, infected, xlabel="Time", ylabel="Population", title="Infected", labels=nothing, fillrange=previous_infected, colour=:blue) # Plot the model
                 else
                     plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels=nothing, fillrange=previous_seriously_infected, colour=:blue) # Plot the model
@@ -1178,11 +1223,15 @@ function plot_second_town(S0, I0, SI0, R0, days, params, infect, params2, ratio_
         end
     end
 
-    if infect == 0
+    if infect == 1
+        if plot_actual == 1
+            plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected", colour=:red) # Plot the model
+        end
         plot!([0], [0], xlabel="Time", ylabel="Population", title="Infected", labels="Infected", colour=:blue) # Plot the model
-        plot!(ti, actual_infected, xlabel="Time", ylabel="Population", title="Infected", labels="Actual Infected", colour=:red) # Plot the model
     else
+        if plot_actual == 1
+            plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected", colour=:red) # Plot the model
+        end
         plot!([0], [0], xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected", colour=:blue) # Plot the model
-        plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected", colour=:red) # Plot the model
     end
 end
