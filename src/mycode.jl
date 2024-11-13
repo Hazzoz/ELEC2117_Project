@@ -191,8 +191,12 @@ function plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level
         end
 
         # Ensure previous arrays are initialized and match lengths
-        previous_infected = isempty(previous_infected) ? deepcopy(infected) : previous_infected
-        previous_seriously_infected = isempty(previous_seriously_infected) ? deepcopy(seriously_infected) : previous_seriously_infected
+        if isempty(previous_infected)
+            previous_infected = deepcopy(infected)
+        end
+        if isempty(previous_seriously_infected)
+            previous_seriously_infected = deepcopy(seriously_infected)
+        end
 
         while length(previous_infected) < length(infected)
             push!(previous_infected, previous_infected[end])
