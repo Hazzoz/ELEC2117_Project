@@ -232,7 +232,7 @@ function plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level
 end
 
 """
-error_beta is a function that plots the RSME of a range of beta values
+Level3_error_beta is a function that plots the RSME of a range of beta values
 using the predicted and actual data provided.
 Inputs:
 - S0 = Initial Susceptible Population
@@ -251,7 +251,8 @@ function Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_rang
     actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
     tsi = [21,22,23,24,25,26,27,28,29,30]
 
-    plot([beta_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
+    plot([beta_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing) # Setup empty plot
+    # Metrics that need to be found (minimum error and associated beta)
     beta_min = 1
     min = S0
 
@@ -261,14 +262,16 @@ function Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_rang
     betas = range(beta_range[1], beta_range[2], length=50)
     ratios = range(ratio_range[1], ratio_range[2], 5)
 
-    for l in ratios
-        params.SIratio = l
+    # Loop through ratios
+    for r in ratios
+        params.SIratio = r
         error_vals = Float64[]
         # Loops through range of betas
-        for i in betas
-            params.beta = i # Changes value to new beta
-            solution = solve_SIR(S0, I0, SI0, R0, days, params)
+        for b in betas
+            params.beta = b # Changes value to new beta
+            solution = solve_SIR(S0, I0, SI0, R0, days, params) # Solve model
 
+            # New error metrics
             current_infected_error = 0
             current_seriously_infected_error = 0
 
@@ -282,31 +285,38 @@ function Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_rang
                 end
 
                 for k = 1:length(tsi)
-                    if tsi[k] ≈ solution.t[j] atol=0.01
+                    if tsi[k] ≈ solution.t[j] atol=0.01 # Check whether time value as approx equal
                         current_seriously_infected_error += (solution[j][3] - actual_seriously_infected[k])^2
                     end
                 end
             end
-            push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at beta value
+            push!(error_vals, sqrt(current_infected_error + current_seriously_infected_error)) # Calculate RSME at beta value and save it to create a curve
         end
 
+        # Check to find if current curve has a lower error and find associated beta value
         if minimum(error_vals) < min
             min = minimum(error_vals)
             beta_min = betas[argmin(error_vals)]
         end
+
+        # Ensure that fill range isn't empty
         if isempty(previous_error_vals)
             previous_error_vals = deepcopy(error_vals)
         end
 
+        # Ensure that fill range is long enough to fill to
         while length(previous_error_vals) < length(error_vals)
             push!(previous_error_vals,previous_error_vals[end])
         end
 
+        # Plot current error curve
         plot!(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, fillrange=previous_error_vals, colour=:blue)
 
+        # Save current error curve
         previous_error_vals = deepcopy(error_vals)
     end
 
+    # Return minimum beta and plot error curve
     println("Beta min: ", beta_min)
     plot!(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, colour=:blue)
 end
