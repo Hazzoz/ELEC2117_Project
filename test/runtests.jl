@@ -1,328 +1,123 @@
 using ELEC2117_Project
 using Test
 
-@testset "Project" begin
-    # Populations
-    N = 6000
-    I0 = 1
-    SI0 = 0
-    R0 = 0
-    S0 = 6000 - I0 - R0 - SI0
+@testset "Level 2" begin
+    # Dummy values for parameters
+    S0 = 5999        # Initial susceptible population
+    I0 = 1           # Initial infected population
+    SI0 = 0          # Initial seriously infected population
+    R0 = 0           # Initial recovered population
+    days = 25        # Number of days to simulate
 
-    # Parameters
-    contacts = 8
-    beta = 
-    gamma = 1/7
-    epsilon = 1/14
-    alpha = 1/28
-    SIratio = 0.2
-    params = SIRForceOfInfection(beta, gamma, contacts, SIratio, epsilon, alpha, [])
+    # Example parameters structure, replace with actual SIR parameters as needed
+    params = SIRFoI(0.036, 1/7, 8, 0.15, 1/14, 1/28)
 
-    days = 60
+    # Define the ratio range for testing
+    ratio_range = (0.15, 0.25)
 
-    @test 
+    # Test with infect = 1 for infected population and level = 2
+    level = 2
+    infect = 1
+
+    # Run the function
+    R0 = plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level)
+
+    # Check R0 is computed and output
+    @test R0 == (8*0.036/(1/7))
 end
 
-#=
-@testset "BasicSIR" begin
-    ##################### Normal Test
-    # Solve the SIR model
-    sol, lambdas = solve_SIR(5000, 1, 0, 60, BasicSIR(0.3, 0.1, []))
+@testset "Level 3" begin
+    # Dummy values for parameters
+    S0 = 5999        # Initial susceptible population
+    I0 = 1           # Initial infected population
+    SI0 = 0          # Initial seriously infected population
+    R0 = 0           # Initial recovered population
+    days = 30        # Number of days to simulate
 
-    # Get the initial total population
-    initial_total = sum(sol.u[1])
+    # Example parameters structure, replace with actual SIR parameters as needed
+    params = SIRFoI(0.036, 1/7, 8, 0.15, 1/14, 1/28)
 
-    # Check that the total population remains the same at every time step
-    for i in sol.u
-        @test sum(i) ≈ initial_total
-    end
-    ##################### Longer Simulation Time
-    # Solve the SIR model
-    sol, lambdas = solve_SIR(5000, 1, 0, 200, BasicSIR(0.3, 0.1, []))
+    # Define the ratio range for testing
+    ratio_range = (0.15, 0.25)
 
-    # Get the initial total population
-    initial_total = sum(sol.u[1])
+    # Test with infect = 1 for infected population and level = 2
+    level = 2
+    infect = 1
 
-    # Check that the total population remains the same at every time step
-    for i in sol.u
-        @test sum(i) ≈ initial_total
-    end
-    ##################### Shorter Simulation Time
-    # Solve the SIR model
-    sol, lambdas = solve_SIR(5000, 1, 0, 10, BasicSIR(0.3, 0.1, []))
+    # Run the function
+    R0 = plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level)
 
-    # Get the initial total population
-    initial_total = sum(sol.u[1])
+    # Check R0 is computed and output
+    @test R0 == (8*0.036/(1/7))
 
-    # Check that the total population remains the same at every time step
-    for i in sol.u
-        @test sum(i) ≈ initial_total
-    end
-    ##################### No Infected
-    # Solve the SIR model
-    sol, lambdas = solve_SIR(5000, 0, 0, 60, BasicSIR(0.3, 0.1, []))
+    # Define the ratio and beta ranges for testing
+    beta_range = (0.025, 0.042)       # Example range for beta
 
-    # Get the initial total population
-    initial_total = sum(sol.u[1])
+    # Run the Level3_error_beta function
+    beta_min = Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_range)
 
-    # Check that the total population remains the same at every time step
-    for i in sol.u
-        @test sum(i) ≈ initial_total
-    end
-    ##################### High Beta
-    # Solve the SIR model
-    sol, lambdas = solve_SIR(5000, 1, 0, 60, BasicSIR(0.9, 0.1, []))
-
-    # Get the initial total population
-    initial_total = sum(sol.u[1])
-
-    # Check that the total population remains the same at every time step
-    for i in sol.u
-        @test sum(i) ≈ initial_total
-    end
-    ##################### High Gamma
-    # Solve the SIR model
-    sol, lambdas = solve_SIR(5000, 1, 0, 60, BasicSIR(0.3, 2, []))
-
-    # Get the initial total population
-    initial_total = sum(sol.u[1])
-
-    # Check that the total population remains the same at every time step
-    for i in sol.u
-        @test sum(i) ≈ initial_total
-    end
+    @test beta_min ≈ 0.0347 atol=0.01
 end
 
+@testset "Level 4" begin
+    # Dummy values for parameters
+    S0 = 5999        # Initial susceptible population
+    I0 = 1           # Initial infected population
+    SI0 = 0          # Initial seriously infected population
+    R0 = 0           # Initial recovered population
+    days = (30,120)  # Days for each phase: [pre-intervention, post-intervention]
 
-@testset "SIRForceOfInfection" begin
-    ################## Normal Function
-    # Solve the SIR model and obtain the lambda values
-    sol, lambdas = solve_SIR(5000,1,0,60,SIRForceOfInfection(0.3,0.5,10,[]))
+    # Example parameters structure, replace with actual SIR parameters as needed
+    params = SIRFoI(0.036, 1/7, 8, 0.15, 1/14, 1/28)  # Adjust based on your model
+    params2 = SIRFoIIntervention(0.036, 1/7, 8, 0.15, 1/14, 1/28, 0.3,0.8) # Adjust post-intervention parameters
 
-    # Loop through the time steps and check λ calculation
-    for i in 1:length(sol.t)
-        t = sol.t[i]
-        lambda = 0
-        # Get the lambda at the current time step
-        for j in lambdas
-            if j[2] == t
-                lambda = j[1]
-                break
-            end
-        end
+    # Define the ratio and beta ranges for testing
+    ratio_range = (0.15, 0.25)      # Example range for SIratio
+    beta_range = (0.0335, 0.0355)       # Example range for beta
 
-        # Manually compute λ as β * c * I / N
-        N = 5001  # Total population (constant)
-        lambda_calc = 0.3 * 10 * sol.u[i][2] / N
+    # Run the Level4_1_plot_intervention_with_error function
+    max_infected_peak, min_infected_peak, max_seriously_infected_peak, min_seriously_infected_peak = Level4_1_plot_intervention_with_error(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range)
 
-        # Test if the manually computed lambda matches the model’s lambda
-        @test lambda ≈ lambda_calc atol = 0.2
-    end
-    ################## Long Simulation Time
-    # Solve the SIR model and obtain the lambda values
-    sol, lambdas = solve_SIR(5000,1,0,200,SIRForceOfInfection(0.3,0.5,10,[]))
+    @test min_infected_peak > 0
+    @test max_infected_peak > 0
+    @test min_seriously_infected_peak > 0
+    @test max_seriously_infected_peak > 0
+    @test max_infected_peak > min_infected_peak  # Max peak should be higher than min peak
+    @test max_seriously_infected_peak > min_seriously_infected_peak  # Same for seriously infected
 
-    # Loop through the time steps and check λ calculation
-    for i in 1:length(sol.t)
-        t = sol.t[i]
-        lambda = 0
-        # Get the lambda at the current time step
-        for j in lambdas
-            if j[2] == t
-                lambda = j[1]
-                break
-            end
-        end
+    @test (max_infected_peak+min_infected_peak)/2 > (max_seriously_infected_peak+min_seriously_infected_peak)/2
 
-        # Manually compute λ as β * c * I / N
-        N = 5001  # Total population (constant)
-        lambda_calc = 0.3 * 10 * sol.u[i][2] / N
+    max_infected_peak1, min_infected_peak1, max_seriously_infected_peak1, min_seriously_infected_peak1, max_infected_peak_intervention1, min_infected_peak_intervention1, max_seriously_infected_peak_intervention1, min_seriously_infected_peak_intervention1 = Level4_1_compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, 1, 0)
+    max_infected_peak2, min_infected_peak2, max_seriously_infected_peak2, min_seriously_infected_peak2, max_infected_peak_intervention2, min_infected_peak_intervention2, max_seriously_infected_peak_intervention2, min_seriously_infected_peak_intervention2 = Level4_1_compare_intervention(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, 1, 1)
 
-        # Test if the manually computed lambda matches the model’s lambda
-        @test lambda ≈ lambda_calc atol = 0.2
-    end
-    ################## Shorter Simulation Time
-    # Solve the SIR model and obtain the lambda values
-    sol, lambdas = solve_SIR(5000,1,0,10,SIRForceOfInfection(0.3,0.5,10,[]))
+    @test (max_infected_peak1+min_infected_peak1)/2 > (max_infected_peak_intervention2+min_infected_peak_intervention2)/2
 
-    # Loop through the time steps and check λ calculation
-    for i in 1:length(sol.t)
-        t = sol.t[i]
-        lambda = 0
-        # Get the lambda at the current time step
-        for j in lambdas
-            if j[2] == t
-                lambda = j[1]
-                break
-            end
-        end
+    coverage_range = (0,1)
 
-        # Manually compute λ as β * c * I / N
-        N = 5001  # Total population (constant)
-        lambda_calc = 0.3 * 10 * sol.u[i][2] / N
+    coverage_min = Level4_2_error_coverage(S0, I0, SI0, R0, (30,25), params, beta_range, params2, ratio_range, coverage_range, 0)
 
-        # Test if the manually computed lambda matches the model’s lambda
-        @test lambda ≈ lambda_calc atol = 0.2
-    end
-    ################## High Beta
-    # Solve the SIR model and obtain the lambda values
-    sol, lambdas = solve_SIR(5000,1,0,60,SIRForceOfInfection(0.9,0.5,5,[]))
-
-    # Loop through the time steps and check λ calculation
-    for i in 1:length(sol.t)
-        t = sol.t[i]
-        lambda = 0
-        # Get the lambda at the current time step
-        for j in lambdas
-            if j[2] == t
-                lambda = j[1]
-                break
-            end
-        end
-
-        # Manually compute λ as β * c * I / N
-        N = 5001  # Total population (constant)
-        lambda_calc = 0.9 * 5 * sol.u[i][2] / N
-
-        # Test if the manually computed lambda matches the model’s lambda
-        @test lambda ≈ lambda_calc atol = 0.3
-    end
-    ################## High Gamma
-    # Solve the SIR model and obtain the lambda values
-    sol, lambdas = solve_SIR(5000,1,0,60,SIRForceOfInfection(0.3,2,10,[]))
-
-    # Loop through the time steps and check λ calculation
-    for i in 1:length(sol.t)
-        t = sol.t[i]
-        lambda = 0
-        # Get the lambda at the current time step
-        for j in lambdas
-            if j[2] == t
-                lambda = j[1]
-                break
-            end
-        end
-
-        # Manually compute λ as β * c * I / N
-        N = 5001  # Total population (constant)
-        lambda_calc = 0.3 * 10 * sol.u[i][2] / N
-
-        # Test if the manually computed lambda matches the model’s lambda
-        @test lambda ≈ lambda_calc atol = 0.2
-    end
-    ################## High Contacts
-    # Solve the SIR model and obtain the lambda values
-    sol, lambdas = solve_SIR(5000,1,0,60,SIRForceOfInfection(0.3,0.5,100,[]))
-
-    # Loop through the time steps and check λ calculation
-    for i in 1:length(sol.t)
-        t = sol.t[i]
-        lambda = 0
-        # Get the lambda at the current time step
-        for j in lambdas
-            if j[2] == t
-                lambda = j[1]
-                break
-            end
-        end
-
-        # Manually compute λ as β * c * I / N
-        N = 5001  # Total population (constant)
-        lambda_calc = 0.3 * 100 * sol.u[i][2] / N
-
-        # Test if the manually computed lambda matches the model’s lambda
-        @test lambda ≈ lambda_calc atol = 0.75
-    end
+    @test coverage_min ≈ 0.592 atol=0.01
 end
 
-@testset "SIRHerdImmunity" begin
-    ##################### Normal Function
-    # Solve the SIR model
-    sol, lambda = solve_SIR(5000,1,0,60,SIRHerdImmunity(0.3,0.5,10,[]))
+@testset "Level 5" begin
+    # Dummy values for parameters
+    S0 = 10000        # Initial susceptible population
+    I0 = 1           # Initial infected population
+    SI0 = 0          # Initial seriously infected population
+    R0 = 0           # Initial recovered population
+    days = (35,45)  # Days for each phase: [pre-intervention, post-intervention]
 
-    # Calculate the herd immunity threshold
-    R0 = 0.3*10/0.5
-    pc = 1 - 1/R0
+    # Example parameters structure, replace with actual SIR parameters as needed
+    params = SIRFoI(0.036, 1/7, 8, 0.15, 1/14, 1/28)  # Adjust based on your model
+    params2 = SIRFoIIntervention(0.036, 1/7, 8, 0.15, 1/14, 1/28, 0.3,0.8) # Adjust post-intervention parameters
 
-    # Loop through and find the point where the recovered population exceeds 
-    # the threshold and then check that each subsequent point doesn't change
-    # (as beta is 0)
-    check = 0
-    limit = 0
-    for i in sol.u
-        if sum(i)*pc <= i[3] && check == 0
-            limit = i[1]
-            check = 1
-        end
-        if check != 0
-            @test i[1] ≈ limit atol = 0.01
-        end
-    end
-    ##################### High Beta
-    # Solve the SIR model
-    sol, lambda = solve_SIR(5000,1,0,60,SIRHerdImmunity(0.9,0.5,10,[]))
+    # Define the ratio and beta ranges for testing
+    ratio_range = (0.15, 0.25)      # Example range for SIratio
+    beta_range = (0.03, 0.05)       # Example range for beta
+    coverage_range = (0.5,0.7)
 
-    # Calculate the herd immunity threshold
-    R0 = 0.3*10/0.5
-    pc = 1 - 1/R0
+    best_beta, best_day = Level5_best_beta_day_plot(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range, 2, (1,15))
 
-    # Loop through and find the point where the recovered population exceeds 
-    # the threshold and then check that each subsequent point doesn't change
-    # (as beta is 0)
-    check = 0
-    limit = 0
-    for i in sol.u
-        if sum(i)*pc <= i[3] && check == 0
-            limit = i[1]
-            check = 1
-        end
-        if check != 0
-            @test i[1] ≈ limit atol = 0.01
-        end
-    end
-    ##################### High Gamma
-    # Solve the SIR model
-    sol, lambda = solve_SIR(5000,1,0,60,SIRHerdImmunity(0.3,2,10,[]))
-
-    # Calculate the herd immunity threshold
-    R0 = 0.3*10/0.5
-    pc = 1 - 1/R0
-
-    # Loop through and find the point where the recovered population exceeds 
-    # the threshold and then check that each subsequent point doesn't change
-    # (as beta is 0)
-    check = 0
-    limit = 0
-    for i in sol.u
-        if sum(i)*pc <= i[3] && check == 0
-            limit = i[1]
-            check = 1
-        end
-        if check != 0
-            @test i[1] ≈ limit atol = 0.01
-        end
-    end
-    ##################### No Infected
-    # Solve the SIR model
-    sol, lambda = solve_SIR(5000,0,0,60,SIRHerdImmunity(0.3,0.5,10,[]))
-
-    # Calculate the herd immunity threshold
-    R0 = 0.3*10/0.5
-    pc = 1 - 1/R0
-
-    # Loop through and find the point where the recovered population exceeds 
-    # the threshold and then check that each subsequent point doesn't change
-    # (as beta is 0)
-    check = 0
-    limit = 0
-    for i in sol.u
-        if sum(i)*pc <= i[3] && check == 0
-            limit = i[1]
-            check = 1
-        end
-        if check != 0
-            @test i[1] ≈ limit atol = 0.01
-        end
-    end
+    @test best_day == 13
+    @test best_beta ≈ 0.0403 atol=0.01
 end
-=#

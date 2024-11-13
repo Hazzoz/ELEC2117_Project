@@ -113,7 +113,7 @@ Inputs:
 - infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
 """
 function Level2_plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect)
-    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 2)  # Call the plotting function for level 2
+    plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, 2)  # Call the plotting function for level 2
 end
 
 """
@@ -132,7 +132,7 @@ Inputs:
 - infect = determines whether to plot infected or seriously infected data (1 = infected, else = seriously infected)
 """
 function Level3_plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect)
-    plot_infected(S0, I0, SI0, R0, days, params, infect, ratio_range, 3)  # Call the plotting function for level 3
+    plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, 3)  # Call the plotting function for level 3
 end
 
 """
@@ -153,20 +153,19 @@ Inputs:
 """
 function plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level)
     # Set actual data and corresponding time points based on the level
-    actual_infected, ti, actual_seriously_infected, tsi = if level == 3
-        ([11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55],
-         [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
-         [0,0,1,2,5,5,5,2,9,4],
-         [21,22,23,24,25,26,27,28,29,30])
-    else
-        ([11,7,20,3,29,14,11,12,16,10,58],
-         [15,16,17,18,19,20,21,22,23,24,25],
-         [0,0,1,2,5],
-         [21,22,23,24,25])
+    actual_infected = [11,7,20,3,29,14,11,12,16,10,58]
+    ti = [15,16,17,18,19,20,21,22,23,24,25]
+    actual_seriously_infected = [0,0,1,2,5]
+    tsi = [21,22,23,24,25]
+    if level == 3
+        actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55]
+        ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30]
+        actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4]
+        tsi = [21,22,23,24,25,26,27,28,29,30]
     end
 
     # Create a base plot
-    plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
+    pp = plot([0],[0], xlabel="Time", ylabel="Population", title="Infected", labels=nothing)
 
     # Generate ratios to test
     ratios = range(ratio_range[1], ratio_range[2], 5)
@@ -216,9 +215,9 @@ function plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level
         previous_infected, previous_seriously_infected = deepcopy(infected), deepcopy(seriously_infected)
     end
 
+    R0 = params.contacts * params.beta / params.gamma
     # Compute and display R0 if level is 2
     if level == 2
-        R0 = params.contacts * params.beta / params.gamma
         println("R0: ", round(R0, digits=3))
     end
 
@@ -230,6 +229,9 @@ function plot_infected(S0, I0, SI0, R0, days, params, ratio_range, infect, level
         plot!(time, seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Seriously Infected", colour=:blue)
         plot!(tsi, actual_seriously_infected, xlabel="Time", ylabel="Population", title="Seriously Infected", labels="Actual Seriously Infected", colour=:red)
     end
+
+    display(pp)
+    return R0
 end
 
 """
@@ -256,7 +258,7 @@ function Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_rang
     tsi = [21,22,23,24,25,26,27,28,29,30]
 
     # Setup empty plot for beta vs error
-    plot([beta_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
+    pp = plot([beta_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
 
     # Initialize metrics to track minimum error and associated beta value
     beta_min = 1
@@ -327,6 +329,9 @@ function Level3_error_beta(S0, I0, SI0, R0, days, params, beta_range, ratio_rang
 
     # Final plot of the error curve
     plot!(betas, error_vals, xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing, colour=:blue)
+
+    display(pp)
+    return beta_min
 end
 
 
@@ -352,7 +357,7 @@ function Level4_1_plot_intervention_with_error(S0, I0, SI0, R0, days, params, be
     max_seriously_infected_peak = min_seriously_infected_peak = 0
 
     # Plot initial vertical line indicating intervention time
-    plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, colour=:black)
+    pp = plot([31,31], [0,250], xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels=nothing, colour=:black)
 
     # Define ranges for ratio and beta
     ratios, betas = range(ratio_range[1], ratio_range[2], 20), range(beta_range[1], beta_range[2], length=20)
@@ -438,6 +443,9 @@ function Level4_1_plot_intervention_with_error(S0, I0, SI0, R0, days, params, be
     # Final plot with labels
     plot!(time, infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels="Infected", color=:blue)
     plot!(time, seriously_infected, xlabel="Time (Days)", ylabel="Population", title="Infected After Intervention", labels="Seriously Infected", color=:red)
+
+    display(pp)
+    return max_infected_peak, min_infected_peak, max_seriously_infected_peak, min_seriously_infected_peak
 end
 
 
@@ -468,7 +476,7 @@ function Level4_1_compare_intervention(S0, I0, SI0, R0, days, params, beta_range
     ratios, betas = range(ratio_range[1], ratio_range[2], length=30), range(beta_range[1], beta_range[2], length=20)
     
     # Initialize plot
-    plot([31, 31], [0, 250], xlabel="Time (Days)", ylabel="Population", title=" ", labels=nothing, colour=:black)
+    pp = plot([31, 31], [0, 250], xlabel="Time (Days)", ylabel="Population", title=" ", labels=nothing, colour=:black)
 
     if intervene != 1
         for r in ratios
@@ -614,6 +622,8 @@ function Level4_1_compare_intervention(S0, I0, SI0, R0, days, params, beta_range
     end
 
     plot!([0], [0], labels=nothing)
+    display(pp)
+    return max_infected_peak, min_infected_peak, max_seriously_infected_peak, min_seriously_infected_peak, max_infected_peak_intervention, min_infected_peak_intervention, max_seriously_infected_peak_intervention, min_seriously_infected_peak_intervention
 end
 
 """
@@ -758,7 +768,7 @@ function Level4_2_error_coverage(S0, I0, SI0, R0, days, params, beta_range, para
     ratios = range(ratio_range[1], ratio_range[2], length=10)
 
     # Initialize plot for error visualization
-    plot([coverage_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
+    pp = plot([coverage_range[1]],[0], xlabel="Beta", ylabel="Error", title="Beta vs Error", labels=nothing)
 
     # Variables to track the minimum error and corresponding coverage
     coverage_min = 1
@@ -855,7 +865,10 @@ function Level4_2_error_coverage(S0, I0, SI0, R0, days, params, beta_range, para
 
     # Output minimum coverage value and plot final error curve
     println("Coverage min: ", coverage_min)
-    plot!([0], [0], xlabel="Coverage", ylabel="Error", title="Coverage vs Error", labels=nothing)
+    plot!([coverage_min], [0], xlabel="Coverage", ylabel="Error", title="Coverage vs Error", labels=nothing)
+
+    display(pp)
+    return coverage_min
 end
 
 """
@@ -1220,15 +1233,13 @@ Inputs:
 """
 function Level5_best_beta_day_plot(S0, I0, SI0, R0, days, params, beta_range, params2, ratio_range, coverage_range, town, day_range)
     # Actual data up to day 80
-    actual_infected = [21, 29, 25, 30, 28, 34, 28, 54, 57,92,73,80,109,102,128,135,163,150,211,196,233,247,283,286,332,371,390,404,467,529,598,
-    641,704,702,788,856,854,955,995,1065,1106,1159,1217,1269,1298,1328,1339,1383,1431,1422,1414,1485,1464,1480]
+    actual_infected = [21, 29, 25, 30, 28, 34, 28, 54, 57,92,73,80,109,102,128,135,163,150,211,196,233,247,283,286,332,371,390,404,467,529,598,641,704,702,788,856,854,955,995,1065,1106,1159,1217,1269,1298,1328,1339,1383,1431,1422,1414,1485,1464,1480]
     ti = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
-    actual_seriously_infected = [3, 3, 4, 7, 3, 8, 7, 5, 9,13,15,3,20,13,11,20,16,11,15,18,27,24,28,36,41,35,41,55,63,66,72,80,90,104,109,
-    115,127,135,147,162,163,186,194,200,216,223,241,249,258,275,277,299,302,300]
+    actual_seriously_infected = [3, 3, 4, 7, 3, 8, 7, 5, 9,13,15,3,20,13,11,20,16,11,15,18,27,24,28,36,41,35,41,55,63,66,72,80,90,104,109,115,127,135,147,162,163,186,194,200,216,223,241,249,258,275,277,299,302,300]
     tsi = [27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
     
     if town == 1
-        # Actual data up to day 55 for town 1
+        # Actual data up to day 80 for town 1
         actual_infected = [11,7,20,3,29,14,11,12,16,10,58,34,26,29,51,55,155,53,67,98,130,189,92,192,145,128,68,74,126,265,154,207,299,273,190,152,276,408,267,462,352,385,221,420,544,329,440,427,369,606,416,546,475,617,593,352,337,473,673,653,523,602,551,686,556,600]
         ti = [15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80]
         actual_seriously_infected = [0,0,1,2,5,5,5,2,9,4,22,0,15,48,38,57,9,18,20,0,41,15,35,36,27,38,24,40,34,57,18,29,63,66,119,76,95,28,109,136,119,104,121,93,147,129,130,161,133,136,138,139,181,181,218,183,167,164,219,220]
@@ -1241,7 +1252,7 @@ function Level5_best_beta_day_plot(S0, I0, SI0, R0, days, params, beta_range, pa
     coverages = range(coverage_range[1], coverage_range[2], length=20)   # Coverage levels
     ratios = range(ratio_range[1], ratio_range[2], length=20)   # Ratio range for SI (Seriously Infected)
 
-    plot([beta_range[1]],[0], labels=nothing)   # Initial empty plot
+    pp = plot([beta_range[1]],[0], labels=nothing)   # Initial empty plot
 
     # Track minimum error and corresponding beta and day
     min_error = Inf   # Start with infinite error
@@ -1291,13 +1302,13 @@ function Level5_best_beta_day_plot(S0, I0, SI0, R0, days, params, beta_range, pa
                     current_seriously_infected_error = 0
 
                     for j = 1:length(time)
-                        for k = 1:length(ti)  # Compare infected with actual data
-                            if abs(ti[k] - time[j]) < 0.01
+                        for k = 1:length(ti)
+                            if ti[k] ≈ time[j] atol=0.01  # Approximate time match for infected
                                 current_infected_error += (infected[j] - actual_infected[k])^2
                             end
                         end
-                        for k = 1:length(tsi)  # Compare seriously infected with actual data
-                            if abs(tsi[k] - time[j]) < 0.01
+                        for k = 1:length(tsi)
+                            if tsi[k] ≈ time[j] atol=0.01  # Approximate time match for seriously infected
                                 current_seriously_infected_error += (seriously_infected[j] - actual_seriously_infected[k])^2
                             end
                         end
@@ -1324,6 +1335,8 @@ function Level5_best_beta_day_plot(S0, I0, SI0, R0, days, params, beta_range, pa
     println("Best Beta: ", best_beta)
     println("Start Day: ", round(best_day,digits=0))  # Output best beta and day
     plot!([betas], [beta_errors], xlabel="Beta", ylabel="Error", title="Error vs Beta across Days", labels=nothing, colour=:red)  # Final plot showing error vs beta
+    display(pp)
+    return best_beta, best_day
 end
 
 """
@@ -1460,7 +1473,7 @@ end
 
 
 """
-plot_SIR is a driver function that runs and then plots an SIR model with uncertainties on variables.
+plot_SIR_with_uncertainties is a driver function that runs and then plots an SIR model with uncertainties on variables.
 Inputs:
 - S0 = Initial Susceptible Population
 - I0 = Initial Infected Population
